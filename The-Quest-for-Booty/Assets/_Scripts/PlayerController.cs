@@ -4,21 +4,26 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    public static PlayerController instance;
+
     public Rigidbody2D rb;
     public float moveSpeed = 5f;
     private Vector2 moveInput;
     private Vector2 mouseInput;
 
     public float mouseSensitivity = 1f;
+    public GameObject bulletImpact;
+    public int currentAmmo;
+    public Animator gunAnimator;
 
-    public Transfrom camTransform;
-
-    void Start()
+    private void Awake()
     {
-        
+        if (instance)
+            Destroy(this);
+        instance = this;
     }
 
-    void Update()
+    private void Update()
     {
         moveInput = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
 
@@ -35,6 +40,25 @@ public class PlayerController : MonoBehaviour
             transform.rotation.eulerAngles.y,
             transform.rotation.eulerAngles.z - mouseInput.x);
 
-        MainCamera.transform.localRotation = Quaternion.Euler(MainCamera.transform.localRotation);
+        Camera.main.transform.localRotation = Quaternion.Euler(Camera.main.transform.localRotation.eulerAngles + new Vector3(0f, mouseInput.y, 0f));
+
+        // shooting
+        if(Input.GetMouseButtonDown(0))
+        {
+            if(currentAmmo <= 0)
+                return;
+
+            Ray ray = Camera.main.ViewportPointToRay(new Vector3(.5f, .5f, 0f));
+            RaycastHit hit;
+            if(Physics.Raycast(ray, out hit))
+            {
+                // Debug.Log("Owie!: " + hit.transform.name);
+                Instantiate(bulletImpact, hit.point, transform.rotation);
+            } else {
+                Debug.Log("I guess they never miss huh!");
+            }
+            currentAmmo--;
+            gunAnimator.SetTrigger("Shoot");
+        }
     }
 }
